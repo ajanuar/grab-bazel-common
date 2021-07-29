@@ -43,7 +43,7 @@ class StyleParser @Inject constructor() : ResourceFileParser {
         entry.children.forEach {
             var childStyleName = entry.tagName.replace(".", "_")
             val childName = "${childStyleName}_${it}"
-            rFields.add(RFieldEntry(Type.ITEM, childName, defaultResValue))
+            rFields.add(RFieldEntry(Type.ATTR, childName, defaultResValue))
         }
 
         // Generate parent value with each subItem
