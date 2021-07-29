@@ -45,6 +45,7 @@ enum class Type(val entry: String) {
     ID("id"),
     INTEGER("integer"),
     INTERPOLATOR("interpolator"),
+    ITEM("item"),
     LAYOUT("layout"),
     MENU("menu"),
     MIPMAP("mipmap"),

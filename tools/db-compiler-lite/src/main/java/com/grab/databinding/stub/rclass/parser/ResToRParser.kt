@@ -169,7 +169,7 @@ class ResToRParserImpl constructor(val parsers: Map<ParserType, @JvmSuppressWild
 
     private fun parseIntoRField(type: XmlTypeValues, name: String, xpp: XmlPullParser) {
         when (type) {
-            XmlTypeValues.STYLE -> parse(ParserType.STYLE_PARSER, name, type)
+            XmlTypeValues.STYLE -> parseParentStyleEntry(ParserType.STYLE_PARSER, name, xpp)
             XmlTypeValues.ARRAY, XmlTypeValues.STRING_ARRAY, XmlTypeValues.INTEGER_ARRAY -> parse(ParserType.ARRAY_PARSER, name, type)
             XmlTypeValues.ENUM -> parse(ParserType.ID_PARSER, name, type)
             XmlTypeValues.DECLARE_STYLEABLE -> parseParentEntry(ParserType.STYLEABLE_PARSER, name, xpp)
@@ -208,6 +208,33 @@ class ResToRParserImpl constructor(val parsers: Map<ParserType, @JvmSuppressWild
         }
 
         return parsers.get(type)?.parse(ParentXmlEntryImpl(name, XmlTypeValues.DECLARE_STYLEABLE, children))
+                ?: throw NullPointerException("Missing implementation. Parser must not be null.")
+    }
+
+    private fun parseParentStyleEntry(type: ParserType, name: String, xpp: XmlPullParser): ParserResult {
+        val children = mutableListOf<String>()
+
+        xpp.next() // Proceed to the next (child) node once we save parent
+
+        while (xpp.getName() != XmlTypeValues.STYLE.entry) {
+
+            // Get next item
+            xpp.next()
+
+            // Prevent having null as a tag or "" as empty content
+            if (xpp.getName() == null || xpp.attributesNameValue().values.isEmpty()) {
+                continue
+            }
+
+            val childName = xpp.attributeName()
+            // Add every child as a dependent for Parent node
+            children.add(childName)
+
+            // Add every child as a independent attribute as well
+            parseIntoRField(XmlTypeValues.ITEM, childName, xpp)
+        }
+
+        return parsers.get(type)?.parse(ParentXmlEntryImpl(name, XmlTypeValues.STYLE, children))
                 ?: throw NullPointerException("Missing implementation. Parser must not be null.")
     }
 }

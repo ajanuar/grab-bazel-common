@@ -22,6 +22,7 @@ import com.grab.databinding.stub.rclass.parser.RFieldEntry
 import com.grab.databinding.stub.rclass.parser.ResourceFileParser
 import com.grab.databinding.stub.rclass.parser.ParserResult
 import com.grab.databinding.stub.common.XmlEntry
+import com.grab.databinding.stub.common.ParentXmlEntry
 import javax.inject.Inject
 
 /**
@@ -35,10 +36,49 @@ class StyleParser @Inject constructor() : ResourceFileParser {
 
     override fun parse(entry: XmlEntry): ParserResult {
 
-        val styleName = entry.tagName.replace(".", "_")
+        require(entry is ParentXmlEntry) { "Only instance of ParentXmlEntry could be used" }
 
-        return setOf(RFieldEntry(Type.STYLE, styleName, defaultResValue)).let {
+        val rFields = mutableSetOf<RFieldEntry>()
+
+        entry.children.forEach {
+            var childStyleName = entry.tagName.replace(".", "_")
+            val childName = "${childStyleName}_${it}"
+            rFields.add(RFieldEntry(Type.ITEM, childName, defaultResValue))
+        }
+
+        // Generate parent value with each subItem
+        val styleableValue = rFields.joinToString(separator = ",") { defaultResValue }.let { "{ ${it} }" }
+
+        // Add parent styleable
+        var stylelableParentName = entry.tagName.replace(".", "_")
+        rFields.add(RFieldEntry(Type.STYLE, stylelableParentName, styleableValue, true))
+
+        return rFields.let {
             ParserResult(it, Type.STYLE)
         }
     }
 }
+
+//override fun parse(entry: XmlEntry): ParserResult {
+//
+//    require(entry is ParentXmlEntry) { "Only instance of ParentXmlEntry could be used" }
+//
+//    val rFields = mutableSetOf<RFieldEntry>()
+//
+//    entry.children.forEach {
+//        var childStyleName = entry.tagName.replace(".", "_")
+//        val childName = "${childStyleName}_${it}"
+//        rFields.add(RFieldEntry(Type.STYLEABLE, childName, defaultResValue))
+//    }
+//
+//    // Generate parent value with each subItem
+//    val styleableValue = rFields.joinToString(separator = ",") { defaultResValue }.let { "{ ${it} }" }
+//
+//    // Add parent styleable
+//    var stylelableParentName = entry.tagName.replace(".", "_")
+//    rFields.add(RFieldEntry(Type.STYLEABLE, stylelableParentName, styleableValue, true))
+//
+//    return rFields.let {
+//        ParserResult(it, Type.STYLEABLE)
+//    }
+//}
